@@ -1,5 +1,5 @@
 
-name: CI - Application IA DevOps
+name: CI-CD - Application IA DevOps
 
 on:
   push:
@@ -7,8 +7,12 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  test-and-build:
+  test-and-publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,3 +34,17 @@ jobs:
 
       - name: Construire l'image Docker
         run: docker build -t iris-ai-devops:v1 .
+
+      - name: Connexion a GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publier l'image Docker
+        if: github.event_name == 'push'
+        run: |
+          docker tag iris-ai-devops:v1 ghcr.io/aymanechadni/iris-ai-devops:latest
+          docker push ghcr.io/aymanechadni/iris-ai-devops:latest
